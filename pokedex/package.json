@@ -1,5 +1,5 @@
 {
-  "name": "primeiro-site",
+  "name": "pokedex",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
