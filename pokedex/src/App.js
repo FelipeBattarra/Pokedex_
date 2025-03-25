@@ -4,7 +4,7 @@ import Pokedex from './components/Pokedex'; // Import the Pokedex component
 function App() {
   return (
     <div className="App">
-      <Pokedex /> {/* Use the Pokedex component */}
+      <Pokedex /> 
     </div>
   );
 }
