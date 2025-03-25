@@ -6,14 +6,12 @@ function Pokedex() {
   const [pokemonList, setPokemonList] = useState([]);
   const [pokemon, setPokemon] = useState(null);
 
-  // Função para buscar os Pokémon da API
   useEffect(() => {
     fetch('https://pokeapi.co/api/v2/pokemon?limit=1025')
       .then((response) => response.json())
       .then((data) => setPokemonList(data.results));
   }, []);
 
-  // Função para buscar um Pokémon específico
   function fetchPokemon(pokemonName) {
     fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}`)
       .then((response) => response.json())
@@ -21,7 +19,6 @@ function Pokedex() {
       .catch((err) => console.log(err));
   }
 
-  // Função de envio de pesquisa
   function handleSubmit(e) {
     e.preventDefault();
     if (pokemonName.trim() !== '') {
@@ -32,7 +29,7 @@ function Pokedex() {
   return (
     <div className="pokedex-container">
       <header className="pokedex-header">
-        <h1>Pokédex</h1>
+        <h1>Pokedex</h1>
         <form onSubmit={handleSubmit} className="search-form">
           <input
             type="text"
@@ -45,7 +42,6 @@ function Pokedex() {
         </form>
       </header>
 
-      {/* Exibição de Pokémon específico */}
       {pokemon && (
         <div className="pokemon-details">
           <img src={pokemon.sprites.front_default} alt={pokemon.name} />
@@ -56,7 +52,6 @@ function Pokedex() {
         </div>
       )}
 
-      {/* Exibição da lista de Pokémon */}
       <div className="pokemon-grid">
         {pokemonList.map((pokemon, index) => (
           <div className="pokemon-card" key={index} onClick={() => fetchPokemon(pokemon.name)}>
