@@ -1,4 +1,3 @@
-/* Estilos gerais */
 * {
     margin: 0;
     padding: 0;
@@ -7,10 +6,10 @@
   
   body {
     font-family: 'Arial', sans-serif;
-    background-color: #f8f8f8;
+    background-color: #ff3b30;
+    
   }
   
-  /* Contêiner principal */
   .pokedex-container {
     width: 100%;
     max-width: 1200px;
@@ -18,7 +17,6 @@
     padding: 20px;
   }
   
-  /* Cabeçalho */
   .pokedex-header {
     display: flex;
     justify-content: space-between;
@@ -66,6 +64,7 @@
   .pokemon-details {
     text-align: center;
     margin-top: 20px;
+    color: white;
   }
   
   .pokemon-details img {
@@ -76,10 +75,12 @@
   .pokemon-details h2 {
     font-size: 2rem;
     margin-top: 10px;
+    color: white;
   }
   
   .pokemon-details p {
     font-size: 1.2rem;
+    color: white;
   }
   
   /* Grid de Pokémon */
@@ -92,7 +93,7 @@
   
   /* Card de Pokémon */
   .pokemon-card {
-    background-color: #ffffff;
+    background-color: #ffff;
     padding: 20px;
     border-radius: 15px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -124,4 +125,16 @@
     font-size: 1.2rem;
     font-weight: bold;
   }
+  .pokemon-types {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;  /* Centraliza as imagens */
+  }
   
+  .pokemon-type-img {
+    width: 20px;    /* Ajuste o tamanho conforme necessário */
+    height: 20px;   /* Ajuste o tamanho conforme necessário */
+    object-fit: contain;  /* Garante que a imagem seja redimensionada corretamente */
+    border-radius: 5px;    /* Adiciona bordas arredondadas, se desejar */
+  }
