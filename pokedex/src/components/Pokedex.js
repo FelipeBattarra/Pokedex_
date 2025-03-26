@@ -24,16 +24,20 @@ const typeImages = {
 };
 
 function Pokedex() {
-  // ---------- ESTADOS ----------
+  // ---------- ESTADOS GERAIS ----------
   const [pokemonName, setPokemonName] = useState('');
-  const [pokemonList, setPokemonList] = useState([]);    // Lista para lazy loading
-  const [allPokemonList, setAllPokemonList] = useState([]); // Lista completa para autocomplete
-  const [suggestions, setSuggestions] = useState([]);    // Sugestões do autocomplete
-  const [pokemon, setPokemon] = useState(null);          // Pokémon selecionado
+  const [pokemonList, setPokemonList] = useState([]);
+  const [allPokemonList, setAllPokemonList] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [pokemon, setPokemon] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [offset, setOffset] = useState(0); // Controle de offset para paginação
+  const [offset, setOffset] = useState(0);
 
-  // ========== 1) Carrega a lista completa (1025) para o autocomplete ==========
+  // ---------- ESTADOS PARA O MODAL ----------
+  const [showModal, setShowModal] = useState(false);
+  const [pokemonDetail, setPokemonDetail] = useState(null);
+
+  // ========== 1) Carrega a lista completa para autocomplete ==========
   useEffect(() => {
     fetch('https://pokeapi.co/api/v2/pokemon?limit=1025')
       .then((res) => res.json())
@@ -56,7 +60,6 @@ function Pokedex() {
       });
   }, [offset]);
 
-  // Chamado sempre que offset muda
   useEffect(() => {
     fetchPokemons();
   }, [fetchPokemons]);
@@ -64,7 +67,6 @@ function Pokedex() {
   // ========== 3) Ao mudar a lista principal, buscar detalhes (types) de cada Pokémon ==========
   useEffect(() => {
     pokemonList.forEach((poke, idx) => {
-      // Se ainda não tiver types, busca detalhes
       if (!poke.types) {
         fetch(`https://pokeapi.co/api/v2/pokemon/${poke.name}`)
           .then((res) => res.json())
@@ -86,14 +88,14 @@ function Pokedex() {
     const handleScroll = () => {
       const bottom = window.innerHeight + document.documentElement.scrollTop === document.documentElement.offsetHeight;
       if (bottom && !loading) {
-        setOffset((prevOffset) => prevOffset + 20); // Carregar mais Pokémons
+        setOffset((prevOffset) => prevOffset + 20);
       }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading]);
 
-  // ========== 5) Função para buscar detalhes de um Pokémon específico ==========
+  // ========== 5) Buscar Pokémon individual (usado no "Search") ==========
   function fetchPokemon(name) {
     fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
       .then((response) => response.json())
@@ -101,7 +103,7 @@ function Pokedex() {
       .catch((err) => console.log(err));
   }
 
-  // ========== 6) Autocomplete: filtra allPokemonList conforme o usuário digita ==========
+  // ========== 6) Autocomplete ==========
   function handleSearchChange(e) {
     const value = e.target.value;
     setPokemonName(value);
@@ -110,25 +112,74 @@ function Pokedex() {
       const filtered = allPokemonList.filter((p) =>
         p.name.toLowerCase().startsWith(value.toLowerCase())
       );
-      setSuggestions(filtered.slice(0, 8)); // Mostra até 8 sugestões
+      setSuggestions(filtered.slice(0, 8));
     } else {
       setSuggestions([]);
     }
   }
 
-  // Clique na sugestão
   function handleSuggestionClick(name) {
     setPokemonName(name);
-    setSuggestions([]); // fecha sugestões
+    setSuggestions([]);
     fetchPokemon(name);
   }
 
-  // ========== 7) Submeter busca (Enter) ==========
   function handleSubmit(e) {
     e.preventDefault();
     if (pokemonName.trim() !== '') {
       fetchPokemon(pokemonName);
       setSuggestions([]);
+    }
+  }
+
+  // ========== 7) Abrir modal ao clicar no card ==========
+  // Aqui buscamos também a descrição do Pokémon via /pokemon-species
+  function openModal(name) {
+    // Reseta antes de buscar
+    setPokemonDetail(null);
+    setShowModal(true);
+
+    // 1. Buscar dados gerais do Pokémon
+    fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
+      .then((res) => res.json())
+      .then((pokeData) => {
+        // 2. Buscar espécie para obter a descrição
+        fetch(pokeData.species.url)
+          .then((res2) => res2.json())
+          .then((speciesData) => {
+            // Pega a flavor text em inglês
+            const flavorEntry = speciesData.flavor_text_entries.find(
+              (entry) => entry.language.name === 'en'
+            );
+            const flavorText = flavorEntry ? flavorEntry.flavor_text.replace(/\f/g, ' ') : '';
+
+            // Monta um objeto com dados importantes
+            const detail = {
+              id: pokeData.id,
+              name: pokeData.name,
+              sprite: pokeData.sprites.front_default,
+              height: pokeData.height / 10,
+              weight: pokeData.weight / 10,
+              types: pokeData.types,
+              description: flavorText,
+            };
+            setPokemonDetail(detail);
+          })
+          .catch((err2) => console.log(err2));
+      })
+      .catch((err) => console.log(err));
+  }
+
+  // Fecha o modal
+  function closeModal() {
+    setShowModal(false);
+  }
+
+  // Se clicar no overlay (fora do conteúdo), fecha
+  function handleOverlayClick(e) {
+    // Verifica se o clique foi no próprio overlay
+    if (e.target.classList.contains('modal-overlay')) {
+      closeModal();
     }
   }
 
@@ -148,14 +199,11 @@ function Pokedex() {
           />
           <button type="submit" className="search-button">Search</button>
 
-          {/* Lista de sugestões do autocomplete */}
           {suggestions.length > 0 && (
             <div className="suggestion-list">
               {suggestions.map((pokeItem) => {
-                // Extrair o ID do Pokémon da URL
                 const urlParts = pokeItem.url.split('/');
                 const id = urlParts[urlParts.length - 2];
-
                 return (
                   <div
                     key={pokeItem.name}
@@ -167,7 +215,9 @@ function Pokedex() {
                       alt={pokeItem.name}
                       className="suggestion-img"
                     />
-                    <span>{pokeItem.name.charAt(0).toUpperCase() + pokeItem.name.slice(1)}</span>
+                    <span>
+                      {pokeItem.name.charAt(0).toUpperCase() + pokeItem.name.slice(1)}
+                    </span>
                   </div>
                 );
               })}
@@ -176,7 +226,7 @@ function Pokedex() {
         </form>
       </header>
 
-      {/* Pokémon Selecionado */}
+      {/* Detalhes do Pokémon buscado (via search) */}
       {pokemon && (
         <div className="pokemon-details">
           <img src={pokemon.sprites.front_default} alt={pokemon.name} />
@@ -187,18 +237,16 @@ function Pokedex() {
         </div>
       )}
 
-      {/* Lista Principal (Lazy Loading) */}
+      {/* Lista principal (lazy loading) */}
       <div className="pokemon-grid">
         {pokemonList.map((p, index) => {
-          // Extrair ID do Pokémon para exibir imagem
           const urlParts = p.url.split('/');
           const pokeId = urlParts[urlParts.length - 2];
-
           return (
             <div
               className="pokemon-card"
               key={index}
-              onClick={() => fetchPokemon(p.name)}
+              onClick={() => openModal(p.name)} // Abre modal ao clicar
             >
               <img
                 src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokeId}.png`}
@@ -207,8 +255,7 @@ function Pokedex() {
               <div className="pokemon-info">
                 <span>#{pokeId}</span>
                 <h3>{p.name.charAt(0).toUpperCase() + p.name.slice(1)}</h3>
-                
-                {/* Exibe os tipos do Pokémon (se já carregados) */}
+                {/* Exibe os tipos, se disponíveis */}
                 <div className="pokemon-types">
                   {p.types &&
                     p.types.map((typeInfo, i) => (
@@ -226,8 +273,48 @@ function Pokedex() {
         })}
       </div>
 
-      {/* Mostrar "Loading..." enquanto carrega */}
       {loading && <div className="loading">Loading...</div>}
+
+      {/* ========== MODAL ========== */}
+      {showModal && (
+        <div className="modal-overlay" onClick={handleOverlayClick}>
+          <div className="modal-content">
+            {pokemonDetail ? (
+              <>
+                <div className="modal-header">
+                  <h2>
+                    #{pokemonDetail.id}{' '}
+                    {pokemonDetail.name.charAt(0).toUpperCase() + pokemonDetail.name.slice(1)}
+                  </h2>
+                  <button className="close-button" onClick={closeModal}>
+                    X
+                  </button>
+                </div>
+                <div className="modal-body">
+                  <img src={pokemonDetail.sprite} alt={pokemonDetail.name} />
+                  <div className="modal-info">
+                    <div className="modal-types">
+                      {pokemonDetail.types.map((typeInfo, i) => (
+                        <img
+                          key={i}
+                          src={typeImages[typeInfo.type.name]}
+                          alt={typeInfo.type.name}
+                          className="pokemon-type-img"
+                        />
+                      ))}
+                    </div>
+                    <p>Height: {pokemonDetail.height}m</p>
+                    <p>Weight: {pokemonDetail.weight}kg</p>
+                    <p className="modal-description">{pokemonDetail.description}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p>Loading...</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -173,4 +173,63 @@
     height: 30px;
     margin-right: 8px;
   }
-  
+  /* Overlay que cobre toda a tela */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* escurece o fundo */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* acima de tudo */
+}
+
+/* Conteúdo do modal */
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px; /* Ajuste conforme desejar */
+  max-height: 80vh;
+  overflow-y: auto; /* se o conteúdo for grande, rola internamente */
+  position: relative; /* Para posicionar o botão de fechar */
+}
+
+/* Header do modal */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Botão de fechar */
+.close-button {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* Corpo do modal */
+.modal-body {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+/* Informações do Pokémon no modal */
+.modal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Descrição */
+.modal-description {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: #333;
+}
