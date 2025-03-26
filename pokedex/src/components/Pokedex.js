@@ -33,7 +33,8 @@ function Pokedex() {
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0);
 
-  // ---------- ESTADOS PARA O MODAL ----------
+  // ---------- ESTADOS PARA SCROLL E MODAL ----------
+  const [targetPokemon, setTargetPokemon] = useState(null); // Armazena o Pokémon que queremos rolar até
   const [showModal, setShowModal] = useState(false);
   const [pokemonDetail, setPokemonDetail] = useState(null);
 
@@ -88,20 +89,12 @@ function Pokedex() {
     const handleScroll = () => {
       const bottom = window.innerHeight + document.documentElement.scrollTop === document.documentElement.offsetHeight;
       if (bottom && !loading) {
-        setOffset((prevOffset) => prevOffset + 20);
+        setOffset((prev) => prev + 20);
       }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading]);
-
-  // ========== 5) Buscar Pokémon individual (usado no "Search") ==========
-  function fetchPokemon(name) {
-    fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
-      .then((response) => response.json())
-      .then((data) => setPokemon(data))
-      .catch((err) => console.log(err));
-  }
 
   // ========== 6) Autocomplete ==========
   function handleSearchChange(e) {
@@ -121,39 +114,66 @@ function Pokedex() {
   function handleSuggestionClick(name) {
     setPokemonName(name);
     setSuggestions([]);
-    fetchPokemon(name);
+    // Rolar até o Pokémon na lista + abrir modal
+    scrollToPokemon(name);
   }
 
   function handleSubmit(e) {
     e.preventDefault();
     if (pokemonName.trim() !== '') {
-      fetchPokemon(pokemonName);
       setSuggestions([]);
+      scrollToPokemon(pokemonName);
     }
   }
 
-  // ========== 7) Abrir modal ao clicar no card ==========
-  // Aqui buscamos também a descrição do Pokémon via /pokemon-species
-  function openModal(name) {
-    // Reseta antes de buscar
-    setPokemonDetail(null);
-    setShowModal(true);
+  // ========== 7) Lógica para rolar até o Pokémon e abrir o modal ==========
+  function scrollToPokemon(name) {
+    const found = pokemonList.find((p) => p.name === name);
+    if (found) {
+      const element = document.getElementById(`pokemon-card-${name}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      openModal(name);
+    } else {
+      openModal(name);
+    }
+  }
 
-    // 1. Buscar dados gerais do Pokémon
+  useEffect(() => {
+    if (targetPokemon) {
+      const found = pokemonList.find((p) => p.name === targetPokemon);
+      if (found) {
+        tryOpenModal(targetPokemon);
+        setTargetPokemon(null);
+      }
+    }
+  }, [pokemonList, targetPokemon]);
+
+  function tryOpenModal(name) {
+    const element = document.getElementById(`pokemon-card-${name}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    openModal(name);
+  }
+
+  // ========== 8) Modal: Buscar dados extras (descrição) ==========
+  function openModal(name) {
+    setShowModal(true);
+    setPokemonDetail(null);
+
     fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
       .then((res) => res.json())
       .then((pokeData) => {
-        // 2. Buscar espécie para obter a descrição
         fetch(pokeData.species.url)
           .then((res2) => res2.json())
           .then((speciesData) => {
-            // Pega a flavor text em inglês
             const flavorEntry = speciesData.flavor_text_entries.find(
               (entry) => entry.language.name === 'en'
             );
             const flavorText = flavorEntry ? flavorEntry.flavor_text.replace(/\f/g, ' ') : '';
 
-            // Monta um objeto com dados importantes
             const detail = {
               id: pokeData.id,
               name: pokeData.name,
@@ -170,20 +190,16 @@ function Pokedex() {
       .catch((err) => console.log(err));
   }
 
-  // Fecha o modal
   function closeModal() {
     setShowModal(false);
   }
 
-  // Se clicar no overlay (fora do conteúdo), fecha
   function handleOverlayClick(e) {
-    // Verifica se o clique foi no próprio overlay
     if (e.target.classList.contains('modal-overlay')) {
       closeModal();
     }
   }
 
-  // ========== RENDERIZAÇÃO ==========
   return (
     <div className="pokedex-container">
       <header className="pokedex-header">
@@ -192,7 +208,7 @@ function Pokedex() {
         <form onSubmit={handleSubmit} className="search-form">
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Type a Pokémon name"
             value={pokemonName}
             onChange={handleSearchChange}
             className="search-bar"
@@ -226,7 +242,6 @@ function Pokedex() {
         </form>
       </header>
 
-      {/* Detalhes do Pokémon buscado (via search) */}
       {pokemon && (
         <div className="pokemon-details">
           <img src={pokemon.sprites.front_default} alt={pokemon.name} />
@@ -237,7 +252,6 @@ function Pokedex() {
         </div>
       )}
 
-      {/* Lista principal (lazy loading) */}
       <div className="pokemon-grid">
         {pokemonList.map((p, index) => {
           const urlParts = p.url.split('/');
@@ -246,27 +260,28 @@ function Pokedex() {
             <div
               className="pokemon-card"
               key={index}
-              onClick={() => openModal(p.name)} // Abre modal ao clicar
+              id={`pokemon-card-${p.name}`}
+              onClick={() => scrollToPokemon(p.name)}
             >
               <img
                 src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokeId}.png`}
                 alt={p.name}
+                className="card-pokemon-img"
               />
-              <div className="pokemon-info">
+              <div className="pokemon-info-overlay">
                 <span>#{pokeId}</span>
                 <h3>{p.name.charAt(0).toUpperCase() + p.name.slice(1)}</h3>
-                {/* Exibe os tipos, se disponíveis */}
-                <div className="pokemon-types">
-                  {p.types &&
-                    p.types.map((typeInfo, i) => (
-                      <img
-                        key={i}
-                        src={typeImages[typeInfo.type.name]}
-                        alt={typeInfo.type.name}
-                        className="pokemon-type-img"
-                      />
-                    ))}
-                </div>
+              </div>
+              <div className="pokemon-types">
+                {p.types &&
+                  p.types.map((typeInfo, i) => (
+                    <img
+                      key={i}
+                      src={typeImages[typeInfo.type.name]}
+                      alt={typeInfo.type.name}
+                      className="pokemon-type-img bigger-type-img"
+                    />
+                  ))}
               </div>
             </div>
           );
@@ -275,7 +290,6 @@ function Pokedex() {
 
       {loading && <div className="loading">Loading...</div>}
 
-      {/* ========== MODAL ========== */}
       {showModal && (
         <div className="modal-overlay" onClick={handleOverlayClick}>
           <div className="modal-content">
@@ -286,26 +300,41 @@ function Pokedex() {
                     #{pokemonDetail.id}{' '}
                     {pokemonDetail.name.charAt(0).toUpperCase() + pokemonDetail.name.slice(1)}
                   </h2>
-                  <button className="close-button" onClick={closeModal}>
-                    X
-                  </button>
+                  <button className="close-button" onClick={closeModal}>X</button>
                 </div>
                 <div className="modal-body">
-                  <img src={pokemonDetail.sprite} alt={pokemonDetail.name} />
-                  <div className="modal-info">
-                    <div className="modal-types">
-                      {pokemonDetail.types.map((typeInfo, i) => (
+                  <img
+                    src={pokemonDetail.sprite}
+                    alt={pokemonDetail.name}
+                    className="modal-pokemon-img"
+                  />
+                  <div className="attribute-box">
+                    <div className="attribute-label">Type(s)</div>
+                    <div className="attribute-value modal-types">
+                      {pokemonDetail.types.map((typeObj, i) => (
                         <img
                           key={i}
-                          src={typeImages[typeInfo.type.name]}
-                          alt={typeInfo.type.name}
-                          className="pokemon-type-img"
+                          src={typeImages[typeObj.type.name]}
+                          alt={typeObj.type.name}
+                          className="pokemon-type-img bigger-type-img"
                         />
                       ))}
                     </div>
-                    <p>Height: {pokemonDetail.height}m</p>
-                    <p>Weight: {pokemonDetail.weight}kg</p>
-                    <p className="modal-description">{pokemonDetail.description}</p>
+                  </div>
+
+                  <div className="attribute-box">
+                    <div className="attribute-label">Height</div>
+                    <div className="attribute-value">{pokemonDetail.height} m</div>
+                  </div>
+
+                  <div className="attribute-box">
+                    <div className="attribute-label">Weight</div>
+                    <div className="attribute-value">{pokemonDetail.weight} kg</div>
+                  </div>
+
+                  <div className="attribute-box">
+                    <div className="attribute-label">Description</div>
+                    <div className="attribute-value">{pokemonDetail.description}</div>
                   </div>
                 </div>
               </>
