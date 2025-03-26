@@ -94,29 +94,6 @@ body {
   margin-right: 8px;
 }
 
-/* Pokemon buscado */
-.pokemon-details {
-  text-align: center;
-  margin-top: 20px;
-  color: white;
-}
-
-.pokemon-details img {
-  width: 150px;
-  height: 150px;
-}
-
-.pokemon-details h2 {
-  font-size: 2rem;
-  margin-top: 10px;
-  color: white;
-}
-
-.pokemon-details p {
-  font-size: 1.2rem;
-  color: white;
-}
-
 /* Lista principal (grid) */
 .pokemon-grid {
   display: grid;
@@ -264,4 +241,9 @@ body {
   height: auto;
   display: flex;
   gap: 6px;
+}
+
+/* Removendo a parte de pokemon-details (já não está mais sendo utilizado) */
+.pokemon-details {
+  display: none; /* Não vai mais ser exibido */
 }

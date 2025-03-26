@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './Pokedex.css'; 
+import './Pokedex.css';
 
 // Mapeia os tipos para as imagens
 const typeImages = {
@@ -24,21 +24,17 @@ const typeImages = {
 };
 
 function Pokedex() {
-  // ---------- ESTADOS GERAIS ----------
   const [pokemonName, setPokemonName] = useState('');
   const [pokemonList, setPokemonList] = useState([]);
   const [allPokemonList, setAllPokemonList] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
-  const [pokemon, setPokemon] = useState(null);
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0);
 
-  // ---------- ESTADOS PARA SCROLL E MODAL ----------
-  const [targetPokemon, setTargetPokemon] = useState(null); // Armazena o Pokémon que queremos rolar até
+  const [targetPokemon, setTargetPokemon] = useState(null); 
   const [showModal, setShowModal] = useState(false);
   const [pokemonDetail, setPokemonDetail] = useState(null);
 
-  // ========== 1) Carrega a lista completa para autocomplete ==========
   useEffect(() => {
     fetch('https://pokeapi.co/api/v2/pokemon?limit=1025')
       .then((res) => res.json())
@@ -46,7 +42,6 @@ function Pokedex() {
       .catch((err) => console.log(err));
   }, []);
 
-  // ========== 2) Lazy loading: busca Pokémons em blocos de 20 ==========
   const fetchPokemons = useCallback(() => {
     setLoading(true);
     fetch(`https://pokeapi.co/api/v2/pokemon?limit=20&offset=${offset}`)
@@ -65,7 +60,6 @@ function Pokedex() {
     fetchPokemons();
   }, [fetchPokemons]);
 
-  // ========== 3) Ao mudar a lista principal, buscar detalhes (types) de cada Pokémon ==========
   useEffect(() => {
     pokemonList.forEach((poke, idx) => {
       if (!poke.types) {
@@ -84,7 +78,6 @@ function Pokedex() {
     });
   }, [pokemonList]);
 
-  // ========== 4) Scroll infinito ==========
   useEffect(() => {
     const handleScroll = () => {
       const bottom = window.innerHeight + document.documentElement.scrollTop === document.documentElement.offsetHeight;
@@ -96,7 +89,6 @@ function Pokedex() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading]);
 
-  // ========== 6) Autocomplete ==========
   function handleSearchChange(e) {
     const value = e.target.value;
     setPokemonName(value);
@@ -105,7 +97,7 @@ function Pokedex() {
       const filtered = allPokemonList.filter((p) =>
         p.name.toLowerCase().startsWith(value.toLowerCase())
       );
-      setSuggestions(filtered.slice(0, 8));
+      setSuggestions(filtered.slice(0, 8)); // Limita o número de sugestões
     } else {
       setSuggestions([]);
     }
@@ -120,13 +112,16 @@ function Pokedex() {
 
   function handleSubmit(e) {
     e.preventDefault();
+
     if (pokemonName.trim() !== '') {
       setSuggestions([]);
-      scrollToPokemon(pokemonName);
+      const firstSuggestion = suggestions[0]; // Pega a primeira sugestão
+      if (firstSuggestion) {
+        scrollToPokemon(firstSuggestion.name); // Rola até o Pokémon sugerido
+      }
     }
   }
 
-  // ========== 7) Lógica para rolar até o Pokémon e abrir o modal ==========
   function scrollToPokemon(name) {
     const found = pokemonList.find((p) => p.name === name);
     if (found) {
@@ -158,7 +153,6 @@ function Pokedex() {
     openModal(name);
   }
 
-  // ========== 8) Modal: Buscar dados extras (descrição) ==========
   function openModal(name) {
     setShowModal(true);
     setPokemonDetail(null);
@@ -241,16 +235,6 @@ function Pokedex() {
           )}
         </form>
       </header>
-
-      {pokemon && (
-        <div className="pokemon-details">
-          <img src={pokemon.sprites.front_default} alt={pokemon.name} />
-          <h2>{pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}</h2>
-          <p>Number: #{pokemon.id}</p>
-          <p>Height: {pokemon.height / 10}m</p>
-          <p>Weight: {pokemon.weight / 10}kg</p>
-        </div>
-      )}
 
       <div className="pokemon-grid">
         {pokemonList.map((p, index) => {
