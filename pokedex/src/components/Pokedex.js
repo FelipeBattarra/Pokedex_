@@ -135,6 +135,14 @@ function Pokedex() {
     }
   }
 
+  const tryOpenModal = useCallback((name) => {
+    const element = document.getElementById(`pokemon-card-${name}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    openModal(name);
+  }, []); // Dependência vazia, já que a função não depende de nenhum valor externo
+
   useEffect(() => {
     if (targetPokemon) {
       const found = pokemonList.find((p) => p.name === targetPokemon);
@@ -143,15 +151,8 @@ function Pokedex() {
         setTargetPokemon(null);
       }
     }
-  }, [pokemonList, targetPokemon, tryOpenModal]);
-
-  function tryOpenModal(name) {
-    const element = document.getElementById(`pokemon-card-${name}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    openModal(name);
-  }
+  }, [pokemonList, targetPokemon, tryOpenModal]); // Essa função não depende de nada fora do escopo, então não precisa de dependências aqui
+  
 
   function openModal(name) {
     setShowModal(true);
