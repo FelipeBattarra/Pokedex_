@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './Pokedex.css'; 
 
 // Mapeia os tipos para as imagens
@@ -30,13 +30,8 @@ function Pokedex() {
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0); // Controle de offset para paginação
 
-  // Carregar Pokémons ao inicializar
-  useEffect(() => {
-    fetchPokemons();
-  }, [offset]);
-
-  // Função para buscar Pokémons com base no offset
-  function fetchPokemons() {
+  // Função memorizada para buscar Pokémons com base no offset
+  const fetchPokemons = useCallback(() => {
     setLoading(true);
     fetch(`https://pokeapi.co/api/v2/pokemon?limit=20&offset=${offset}`)
       .then((response) => response.json())
@@ -48,23 +43,46 @@ function Pokedex() {
         console.log(err);
         setLoading(false);
       });
-  }
+  }, [offset]);
+
+  // Chama fetchPokemons sempre que a função (offset) mudar
+  useEffect(() => {
+    fetchPokemons();
+  }, [fetchPokemons]);
 
   // Detectar o scroll para carregar mais Pokémons
   useEffect(() => {
     const handleScroll = () => {
-      const bottom = window.innerHeight + document.documentElement.scrollTop === document.documentElement.offsetHeight;
+      const bottom =
+        window.innerHeight + document.documentElement.scrollTop === document.documentElement.offsetHeight;
       if (bottom && !loading) {
-        setOffset(offset + 20); // Carregar mais Pokémons
+        setOffset((prevOffset) => prevOffset + 20); // Carregar mais Pokémons
       }
     };
 
     window.addEventListener('scroll', handleScroll);
-
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, offset]);
+  }, [loading]);
 
-  // Função para buscar detalhes do Pokémon
+  // UseEffect para buscar detalhes (tipos) dos Pokémons que ainda não os possuem
+  useEffect(() => {
+    // Para cada Pokémon que não possui a propriedade "types", busca seus detalhes.
+    pokemonList.forEach((pokemonItem, idx) => {
+      if (!pokemonItem.types) {
+        fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonItem.name}`)
+          .then((response) => response.json())
+          .then((data) => {
+            // Atualiza apenas o item que não possui os tipos
+            const updatedList = [...pokemonList];
+            updatedList[idx].types = data.types;
+            setPokemonList(updatedList);
+          })
+          .catch((err) => console.log(err));
+      }
+    });
+  }, [pokemonList]);
+
+  // Função para buscar detalhes do Pokémon individual (quando clicado ou buscado)
   function fetchPokemon(pokemonName) {
     fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}`)
       .then((response) => response.json())
@@ -116,17 +134,17 @@ function Pokedex() {
             <div className="pokemon-info">
               <span>#{index + 1}</span>
               <h3>{pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}</h3>
-
-              {/* Exibe os tipos de Pokémon */}
+              {/* Exibe os tipos de Pokémon abaixo do nome */}
               <div className="pokemon-types">
-                {pokemon.types && pokemon.types.map((typeInfo, i) => (
-                  <img
-                    key={i}
-                    src={typeImages[typeInfo.type.name]}
-                    alt={typeInfo.type.name}
-                    className="pokemon-type-img"
-                  />
-                ))}
+                {pokemon.types &&
+                  pokemon.types.map((typeInfo, i) => (
+                    <img
+                      key={i}
+                      src={typeImages[typeInfo.type.name]}
+                      alt={typeInfo.type.name}
+                      className="pokemon-type-img"
+                    />
+                  ))}
               </div>
             </div>
           </div>
