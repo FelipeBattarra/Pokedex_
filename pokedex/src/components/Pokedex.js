@@ -143,7 +143,7 @@ function Pokedex() {
         setTargetPokemon(null);
       }
     }
-  }, [pokemonList, targetPokemon]);
+  }, [pokemonList, targetPokemon, tryOpenModal]);
 
   function tryOpenModal(name) {
     const element = document.getElementById(`pokemon-card-${name}`);
