@@ -31,11 +31,6 @@
     font-size: 2rem;
   }
   
-  .search-form {
-    display: flex;
-    align-items: center;
-  }
-  
   .search-bar {
     padding: 8px 16px;
     font-size: 1rem;
@@ -138,3 +133,44 @@
     object-fit: contain;  /* Garante que a imagem seja redimensionada corretamente */
     border-radius: 5px;    /* Adiciona bordas arredondadas, se desejar */
   }
+
+  .search-form {
+    display: flex;
+    align-items: center;
+    position: relative; /* Para posicionar a lista de sugestões */
+  }
+  
+  /* Lista de sugestões do autocomplete */
+  .suggestion-list {
+    position: absolute;
+    top: 100%; /* Logo abaixo do input */
+    left: 0;
+    width: 200px; /* Mesma largura do input, por exemplo */
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: 5px;
+    z-index: 999; /* Fica na frente do input */
+    color: black;
+  }
+  
+  /* Cada item da sugestão */
+  .suggestion-item {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    cursor: pointer;
+  }
+  
+  .suggestion-item:hover {
+    background-color: #f0f0f0;
+    color: black;
+  }
+  
+  /* Imagem do autocomplete */
+  .suggestion-img {
+    width: 30px;
+    height: 30px;
+    margin-right: 8px;
+  }
+  
