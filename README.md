@@ -18,6 +18,9 @@ Este é um projeto desenvolvido com React que utiliza a PokeAPI para exibir uma 
 - **CSS**: Estilização da interface.
 - **React Hooks**: Para gerenciamento de estado e efeitos.
 
+  **Como testar o projeto hospedado** :
+  Clique neste link ---> [https://pokedex-felipe-battarra.netlify.app/](https://pokedex-felipe-battarra.netlify.app/)
+
 ## Como Rodar o Projeto
 
 1. **Clone o repositório**:
